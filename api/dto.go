@@ -16,6 +16,7 @@ type CartDiscountRequest struct {
 	CartItems   []CartItemDTO       `json:"cart_items"`
 	Customer    CustomerDTO         `json:"customer"`
 	PaymentInfo *PaymentInfoDTO     `json:"payment_info,omitempty"`
+	VoucherCode string              `json:"voucher_code,omitempty"`
 }
 
 // ValidateCodeRequest is the JSON body for POST /api/v1/discount/validate.
@@ -66,7 +67,7 @@ type CustomerDTO struct {
 }
 
 type PaymentInfoDTO struct {
-	// Method is "CARD" | "UPI" | "VOUCHER:<CODE>" (to apply a voucher at checkout)
+	// Method is "CARD" | "UPI"
 	Method   string  `json:"method"`
 	BankName *string `json:"bank_name,omitempty"`
 	CardType *string `json:"card_type,omitempty"`

@@ -26,14 +26,9 @@ func NewHandler(svc service.DiscountService) *Handler {
 //	{
 //	  "cart_items": [...],
 //	  "customer": { "id": "c1", "tier": "regular" },
-//	  "payment_info": { "method": "CARD", "bank_name": "ICICI", "card_type": "CREDIT" }
+//	  "payment_info": { "method": "CARD", "bank_name": "ICICI", "card_type": "CREDIT" },
+//	  "voucher_code": "SAVE10"
 //	}
-//
-// To also apply a voucher, set method = "VOUCHER:<CODE>", e.g. "VOUCHER:SAVE10".
-// For a voucher + bank offer together the method encodes the voucher and bank_name
-// carries the bank, e.g.:
-//
-//	{ "method": "VOUCHER:SAVE10", "bank_name": "ICICI", "card_type": "CREDIT" }
 func (h *Handler) CalculateCartDiscounts(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, http.StatusMethodNotAllowed, "method not allowed")
@@ -60,7 +55,7 @@ func (h *Handler) CalculateCartDiscounts(w http.ResponseWriter, r *http.Request)
 	customer := ToModelCustomer(req.Customer)
 	paymentInfo := ToModelPaymentInfo(req.PaymentInfo)
 
-	result, err := h.svc.CalculateCartDiscounts(r.Context(), cartItems, customer, paymentInfo)
+	result, err := h.svc.CalculateCartDiscounts(r.Context(), cartItems, customer, req.VoucherCode, paymentInfo)
 	if err != nil {
 		writeError(w, http.StatusUnprocessableEntity, err.Error())
 		return

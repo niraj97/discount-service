@@ -143,14 +143,7 @@ func ICICIPayment() *models.PaymentInfo {
 	}
 }
 
-// ICICIPaymentWithVoucher returns an ICICI card payment that also carries a voucher.
-func ICICIPaymentWithVoucher(code string) *models.PaymentInfo {
-	return &models.PaymentInfo{
-		Method:   "VOUCHER:" + code,
-		BankName: str("ICICI"),
-		CardType: str("CREDIT"),
-	}
-}
+
 
 // HDFCCreditPayment returns a PaymentInfo for an HDFC credit card.
 func HDFCCreditPayment() *models.PaymentInfo {

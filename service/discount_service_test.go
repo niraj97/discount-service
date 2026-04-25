@@ -38,7 +38,7 @@ func TestCalculateCartDiscounts(t *testing.T) {
 	ctx := context.Background()
 
 	t.Run("error on empty cart", func(t *testing.T) {
-		_, err := svc.CalculateCartDiscounts(ctx, nil, testdata.DefaultCustomer(), testdata.UPIPayment())
+		_, err := svc.CalculateCartDiscounts(ctx, nil, testdata.DefaultCustomer(), "", testdata.UPIPayment())
 		if err == nil {
 			t.Fatal("expected error for empty cart, got nil")
 		}
@@ -53,6 +53,7 @@ func TestCalculateCartDiscounts(t *testing.T) {
 			ctx,
 			testdata.PumaTShirtCart(),
 			testdata.DefaultCustomer(),
+			"",
 			testdata.ICICIPayment(),
 		)
 		if err != nil {
@@ -81,7 +82,8 @@ func TestCalculateCartDiscounts(t *testing.T) {
 			ctx,
 			testdata.PumaTShirtCart(),
 			testdata.DefaultCustomer(),
-			testdata.ICICIPaymentWithVoucher("SAVE10"),
+			"SAVE10",
+			testdata.ICICIPayment(),
 		)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -98,6 +100,7 @@ func TestCalculateCartDiscounts(t *testing.T) {
 			ctx,
 			shoesCart,
 			testdata.DefaultCustomer(),
+			"",
 			testdata.UPIPayment(),
 		)
 		if err != nil {
@@ -123,6 +126,7 @@ func TestCalculateCartDiscounts(t *testing.T) {
 			ctx,
 			testdata.MultiItemCart(),
 			testdata.DefaultCustomer(),
+			"",
 			testdata.ICICIPayment(),
 		)
 		if err != nil {
@@ -141,7 +145,8 @@ func TestCalculateCartDiscounts(t *testing.T) {
 			ctx,
 			testdata.PumaTShirtCart(),
 			testdata.DefaultCustomer(),
-			testdata.ICICIPaymentWithVoucher("PREMIUM20"),
+			"PREMIUM20",
+			testdata.ICICIPayment(),
 		)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -161,7 +166,8 @@ func TestCalculateCartDiscounts(t *testing.T) {
 			ctx,
 			testdata.PumaTShirtCart(),
 			testdata.PremiumCustomer(),
-			testdata.ICICIPaymentWithVoucher("PREMIUM20"),
+			"PREMIUM20",
+			testdata.ICICIPayment(),
 		)
 		if err != nil {
 			t.Fatalf("unexpected error: %v", err)
@@ -179,6 +185,7 @@ func TestCalculateCartDiscounts(t *testing.T) {
 			ctx,
 			testdata.PumaTShirtCart(),
 			testdata.DefaultCustomer(),
+			"",
 			testdata.HDFCCreditPayment(),
 		)
 		if err != nil {

@@ -39,15 +39,12 @@ func (s *discountServiceImpl) CalculateCartDiscounts(
 	ctx context.Context,
 	cartItems []models.CartItem,
 	customer models.CustomerProfile,
+	voucherCode string,
 	paymentInfo *models.PaymentInfo,
 ) (*models.DiscountedPrice, error) {
 	if len(cartItems) == 0 {
 		return nil, fmt.Errorf("cart is empty")
 	}
-
-	// Voucher code is passed through paymentInfo.Method for this interface design.
-	// Callers that want to apply a voucher set Method = "VOUCHER:<CODE>".
-	voucherCode := extractVoucherCode(paymentInfo)
 
 	// Compute gross original price and seed per-item running prices.
 	// itemPrices[i] starts at base_price * quantity and is reduced in-place
@@ -145,19 +142,6 @@ func (s *discountServiceImpl) ValidateDiscountCode(
 }
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-
-// extractVoucherCode reads a voucher code from payment method when the caller
-// encodes it as "VOUCHER:<CODE>".
-func extractVoucherCode(paymentInfo *models.PaymentInfo) string {
-	if paymentInfo == nil {
-		return ""
-	}
-	const prefix = "VOUCHER:"
-	if strings.HasPrefix(strings.ToUpper(paymentInfo.Method), prefix) {
-		return paymentInfo.Method[len(prefix):]
-	}
-	return ""
-}
 
 // buildMessage constructs a human-readable summary of applied discounts.
 func buildMessage(appliedDiscounts map[string]decimal.Decimal, totalSaved decimal.Decimal) string {

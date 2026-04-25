@@ -11,7 +11,7 @@ type DiscountService interface {
 	// - Then apply coupon codes
 	// - Then apply bank offers
 	CalculateCartDiscounts(ctx context.Context, cartItems []models.CartItem,
-		customer models.CustomerProfile, paymentInfo *models.PaymentInfo) (*models.DiscountedPrice, error)
+		customer models.CustomerProfile, voucherCode string, paymentInfo *models.PaymentInfo) (*models.DiscountedPrice, error)
 
 	// ValidateDiscountCode validates if a discount code can be applied.
 	// Handle specific cases like:
