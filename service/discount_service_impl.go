@@ -62,15 +62,17 @@ func (s *discountServiceImpl) CalculateCartDiscounts(
 	// Run each handler in strict pipeline order.
 	// Handlers mutate itemPrices in-place; each stage compounds on the
 	// price produced by the previous stage.
+	hCtx := &discount.HandlerContext{
+		Items:            cartItems,
+		ItemPrices:       itemPrices,
+		VoucherCode:      voucherCode,
+		PaymentInfo:      paymentInfo,
+		Customer:         customer,
+		AppliedDiscounts: appliedDiscounts,
+	}
+
 	for _, handler := range s.pipeline {
-		handler.Apply(
-			cartItems,
-			itemPrices,
-			voucherCode,
-			paymentInfo,
-			customer,
-			appliedDiscounts,
-		)
+		handler.Apply(hCtx)
 	}
 
 	// Sum per-item running prices to get the final cart price.

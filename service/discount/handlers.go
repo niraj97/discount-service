@@ -20,15 +20,18 @@ import (
 //
 // This design ensures every stage operates on the price produced by the
 // previous stage rather than recalculating from the original base price.
+// HandlerContext bundles the inputs for a single stage in the discount pipeline.
+type HandlerContext struct {
+	Items            []models.CartItem
+	ItemPrices       []decimal.Decimal // running price per cart line (mutated)
+	VoucherCode      string
+	PaymentInfo      *models.PaymentInfo
+	Customer         models.CustomerProfile
+	AppliedDiscounts map[string]decimal.Decimal
+}
+
 type Handler interface {
-	Apply(
-		items []models.CartItem,
-		itemPrices []decimal.Decimal, // running price per cart line (mutated)
-		voucherCode string,
-		paymentInfo *models.PaymentInfo,
-		customer models.CustomerProfile,
-		appliedDiscounts map[string]decimal.Decimal,
-	)
+	Apply(ctx *HandlerContext)
 }
 
 // ─── Brand Discount Handler ───────────────────────────────────────────────────
@@ -39,23 +42,16 @@ type BrandHandler struct {
 	Repo repository.DiscountRepository
 }
 
-func (h *BrandHandler) Apply(
-	items []models.CartItem,
-	itemPrices []decimal.Decimal,
-	_ string,
-	_ *models.PaymentInfo,
-	_ models.CustomerProfile,
-	appliedDiscounts map[string]decimal.Decimal,
-) {
-	for i, item := range items {
+func (h *BrandHandler) Apply(ctx *HandlerContext) {
+	for i, item := range ctx.Items {
 		for _, bd := range h.Repo.GetBrandDiscounts() {
 			if !strings.EqualFold(item.Product.Brand, bd.Brand) {
 				continue
 			}
-			discountAmt := itemPrices[i].Mul(bd.Percentage).Div(decimal.NewFromInt(100))
+			discountAmt := ctx.ItemPrices[i].Mul(bd.Percentage).Div(decimal.NewFromInt(100))
 			key := "Brand Discount (" + item.Product.Brand + ")"
-			appliedDiscounts[key] = appliedDiscounts[key].Add(discountAmt)
-			itemPrices[i] = itemPrices[i].Sub(discountAmt)
+			ctx.AppliedDiscounts[key] = ctx.AppliedDiscounts[key].Add(discountAmt)
+			ctx.ItemPrices[i] = ctx.ItemPrices[i].Sub(discountAmt)
 		}
 	}
 }
@@ -69,24 +65,17 @@ type CategoryHandler struct {
 	Repo repository.DiscountRepository
 }
 
-func (h *CategoryHandler) Apply(
-	items []models.CartItem,
-	itemPrices []decimal.Decimal,
-	_ string,
-	_ *models.PaymentInfo,
-	_ models.CustomerProfile,
-	appliedDiscounts map[string]decimal.Decimal,
-) {
-	for i, item := range items {
+func (h *CategoryHandler) Apply(ctx *HandlerContext) {
+	for i, item := range ctx.Items {
 		for _, cd := range h.Repo.GetCategoryDiscounts() {
 			if !strings.EqualFold(item.Product.Category, cd.Category) {
 				continue
 			}
-			// itemPrices[i] is already reduced by any brand discount.
-			discountAmt := itemPrices[i].Mul(cd.Percentage).Div(decimal.NewFromInt(100))
+			// ctx.ItemPrices[i] is already reduced by any brand discount.
+			discountAmt := ctx.ItemPrices[i].Mul(cd.Percentage).Div(decimal.NewFromInt(100))
 			key := "Category Discount (" + item.Product.Category + ")"
-			appliedDiscounts[key] = appliedDiscounts[key].Add(discountAmt)
-			itemPrices[i] = itemPrices[i].Sub(discountAmt)
+			ctx.AppliedDiscounts[key] = ctx.AppliedDiscounts[key].Add(discountAmt)
+			ctx.ItemPrices[i] = ctx.ItemPrices[i].Sub(discountAmt)
 		}
 	}
 }
@@ -100,30 +89,23 @@ type VoucherHandler struct {
 	Repo repository.DiscountRepository
 }
 
-func (h *VoucherHandler) Apply(
-	items []models.CartItem,
-	itemPrices []decimal.Decimal,
-	voucherCode string,
-	_ *models.PaymentInfo,
-	customer models.CustomerProfile,
-	appliedDiscounts map[string]decimal.Decimal,
-) {
-	if voucherCode == "" {
+func (h *VoucherHandler) Apply(ctx *HandlerContext) {
+	if ctx.VoucherCode == "" {
 		return
 	}
-	voucher, found := h.Repo.GetVoucherByCode(voucherCode)
+	voucher, found := h.Repo.GetVoucherByCode(ctx.VoucherCode)
 	if !found {
 		return
 	}
 
 	// Tier check.
 	if voucher.RequiredCustomerTier != "" &&
-		!strings.EqualFold(voucher.RequiredCustomerTier, customer.Tier) {
+		!strings.EqualFold(voucher.RequiredCustomerTier, ctx.Customer.Tier) {
 		return
 	}
 
 	// Brand / category exclusion check.
-	for _, item := range items {
+	for _, item := range ctx.Items {
 		for _, excluded := range voucher.ExcludedBrands {
 			if strings.EqualFold(item.Product.Brand, excluded) {
 				return
@@ -138,11 +120,11 @@ func (h *VoucherHandler) Apply(
 
 	// Apply the voucher % uniformly across each item's running price so that
 	// the total deduction equals cartTotal * pct/100.
-	for i := range itemPrices {
-		discountAmt := itemPrices[i].Mul(voucher.Percentage).Div(decimal.NewFromInt(100))
-		appliedDiscounts["Voucher ("+voucherCode+")"] =
-			appliedDiscounts["Voucher ("+voucherCode+")"].Add(discountAmt)
-		itemPrices[i] = itemPrices[i].Sub(discountAmt)
+	for i := range ctx.ItemPrices {
+		discountAmt := ctx.ItemPrices[i].Mul(voucher.Percentage).Div(decimal.NewFromInt(100))
+		ctx.AppliedDiscounts["Voucher ("+ctx.VoucherCode+")"] =
+			ctx.AppliedDiscounts["Voucher ("+ctx.VoucherCode+")"].Add(discountAmt)
+		ctx.ItemPrices[i] = ctx.ItemPrices[i].Sub(discountAmt)
 	}
 }
 
@@ -155,32 +137,25 @@ type BankOfferHandler struct {
 	Repo repository.DiscountRepository
 }
 
-func (h *BankOfferHandler) Apply(
-	_ []models.CartItem,
-	itemPrices []decimal.Decimal,
-	_ string,
-	paymentInfo *models.PaymentInfo,
-	_ models.CustomerProfile,
-	appliedDiscounts map[string]decimal.Decimal,
-) {
-	if paymentInfo == nil || paymentInfo.BankName == nil {
+func (h *BankOfferHandler) Apply(ctx *HandlerContext) {
+	if ctx.PaymentInfo == nil || ctx.PaymentInfo.BankName == nil {
 		return
 	}
 
 	for _, offer := range h.Repo.GetBankOffers() {
-		bankMatch := strings.EqualFold(*paymentInfo.BankName, offer.BankName)
+		bankMatch := strings.EqualFold(*ctx.PaymentInfo.BankName, offer.BankName)
 		cardMatch := offer.CardType == "" ||
-			(paymentInfo.CardType != nil && strings.EqualFold(*paymentInfo.CardType, offer.CardType))
+			(ctx.PaymentInfo.CardType != nil && strings.EqualFold(*ctx.PaymentInfo.CardType, offer.CardType))
 
 		if !bankMatch || !cardMatch {
 			continue
 		}
 
 		key := "Bank Offer (" + offer.BankName + ")"
-		for i := range itemPrices {
-			discountAmt := itemPrices[i].Mul(offer.Percentage).Div(decimal.NewFromInt(100))
-			appliedDiscounts[key] = appliedDiscounts[key].Add(discountAmt)
-			itemPrices[i] = itemPrices[i].Sub(discountAmt)
+		for i := range ctx.ItemPrices {
+			discountAmt := ctx.ItemPrices[i].Mul(offer.Percentage).Div(decimal.NewFromInt(100))
+			ctx.AppliedDiscounts[key] = ctx.AppliedDiscounts[key].Add(discountAmt)
+			ctx.ItemPrices[i] = ctx.ItemPrices[i].Sub(discountAmt)
 		}
 	}
 }
