@@ -3,6 +3,7 @@ package api
 import (
 	"encoding/json"
 	"net/http"
+	"strings"
 
 	service "discount-service/service"
 )
@@ -97,7 +98,11 @@ func (h *Handler) ValidateDiscountCode(w http.ResponseWriter, r *http.Request) {
 
 	valid, err := h.svc.ValidateDiscountCode(r.Context(), req.Code, cartItems, customer)
 	if err != nil {
-		writeJSON(w, http.StatusOK, ValidateCodeResponse{Valid: false, Message: err.Error()})
+		if strings.Contains(err.Error(), "not found") {
+			writeError(w, http.StatusNotFound, err.Error())
+		} else {
+			writeError(w, http.StatusBadRequest, err.Error())
+		}
 		return
 	}
 

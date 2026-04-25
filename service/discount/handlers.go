@@ -11,6 +11,8 @@ import (
 	decimal "github.com/shopspring/decimal"
 )
 
+var hundred = decimal.NewFromInt(100)
+
 // Handler is a single step in the discount pipeline.
 //
 // itemPrices is a slice parallel to items — itemPrices[i] holds the running
@@ -43,12 +45,13 @@ type BrandHandler struct {
 }
 
 func (h *BrandHandler) Apply(ctx *HandlerContext) {
+	brandDiscounts := h.Repo.GetBrandDiscounts()
 	for i, item := range ctx.Items {
-		for _, bd := range h.Repo.GetBrandDiscounts() {
+		for _, bd := range brandDiscounts {
 			if !strings.EqualFold(item.Product.Brand, bd.Brand) {
 				continue
 			}
-			discountAmt := ctx.ItemPrices[i].Mul(bd.Percentage).Div(decimal.NewFromInt(100))
+			discountAmt := ctx.ItemPrices[i].Mul(bd.Percentage).Div(hundred)
 			key := "Brand Discount (" + item.Product.Brand + ")"
 			ctx.AppliedDiscounts[key] = ctx.AppliedDiscounts[key].Add(discountAmt)
 			ctx.ItemPrices[i] = ctx.ItemPrices[i].Sub(discountAmt)
@@ -66,13 +69,14 @@ type CategoryHandler struct {
 }
 
 func (h *CategoryHandler) Apply(ctx *HandlerContext) {
+	categoryDiscounts := h.Repo.GetCategoryDiscounts()
 	for i, item := range ctx.Items {
-		for _, cd := range h.Repo.GetCategoryDiscounts() {
+		for _, cd := range categoryDiscounts {
 			if !strings.EqualFold(item.Product.Category, cd.Category) {
 				continue
 			}
 			// ctx.ItemPrices[i] is already reduced by any brand discount.
-			discountAmt := ctx.ItemPrices[i].Mul(cd.Percentage).Div(decimal.NewFromInt(100))
+			discountAmt := ctx.ItemPrices[i].Mul(cd.Percentage).Div(hundred)
 			key := "Category Discount (" + item.Product.Category + ")"
 			ctx.AppliedDiscounts[key] = ctx.AppliedDiscounts[key].Add(discountAmt)
 			ctx.ItemPrices[i] = ctx.ItemPrices[i].Sub(discountAmt)
@@ -110,7 +114,7 @@ func (h *VoucherHandler) Apply(ctx *HandlerContext) {
 	// Apply the voucher % uniformly across each item's running price so that
 	// the total deduction equals cartTotal * pct/100.
 	for i := range ctx.ItemPrices {
-		discountAmt := ctx.ItemPrices[i].Mul(voucher.Percentage).Div(decimal.NewFromInt(100))
+		discountAmt := ctx.ItemPrices[i].Mul(voucher.Percentage).Div(hundred)
 		ctx.AppliedDiscounts["Voucher ("+ctx.VoucherCode+")"] =
 			ctx.AppliedDiscounts["Voucher ("+ctx.VoucherCode+")"].Add(discountAmt)
 		ctx.ItemPrices[i] = ctx.ItemPrices[i].Sub(discountAmt)
@@ -142,7 +146,7 @@ func (h *BankOfferHandler) Apply(ctx *HandlerContext) {
 
 		key := "Bank Offer (" + offer.BankName + ")"
 		for i := range ctx.ItemPrices {
-			discountAmt := ctx.ItemPrices[i].Mul(offer.Percentage).Div(decimal.NewFromInt(100))
+			discountAmt := ctx.ItemPrices[i].Mul(offer.Percentage).Div(hundred)
 			ctx.AppliedDiscounts[key] = ctx.AppliedDiscounts[key].Add(discountAmt)
 			ctx.ItemPrices[i] = ctx.ItemPrices[i].Sub(discountAmt)
 		}
