@@ -22,6 +22,7 @@ var hundred = decimal.NewFromInt(100)
 //
 // This design ensures every stage operates on the price produced by the
 // previous stage rather than recalculating from the original base price.
+
 // HandlerContext bundles the inputs for a single stage in the discount pipeline.
 type HandlerContext struct {
 	Items            []models.CartItem
@@ -32,6 +33,7 @@ type HandlerContext struct {
 	AppliedDiscounts map[string]decimal.Decimal
 }
 
+// Handler interface
 type Handler interface {
 	Apply(ctx *HandlerContext)
 }
@@ -44,6 +46,8 @@ type BrandHandler struct {
 	Repo repository.DiscountRepository
 }
 
+// Apply applies brand-level percentage discounts.
+// It is always the first stage, so itemPrices[i] == item.BasePrice * qty here.
 func (h *BrandHandler) Apply(ctx *HandlerContext) {
 	brandDiscounts := h.Repo.GetBrandDiscounts()
 	for i, item := range ctx.Items {
@@ -68,6 +72,9 @@ type CategoryHandler struct {
 	Repo repository.DiscountRepository
 }
 
+// Apply applies category-level percentage discounts.
+// It runs after BrandHandler, so itemPrices[i] is already the post-brand price —
+// the category % is applied on that reduced value, not the base price.
 func (h *CategoryHandler) Apply(ctx *HandlerContext) {
 	categoryDiscounts := h.Repo.GetCategoryDiscounts()
 	for i, item := range ctx.Items {
@@ -93,6 +100,9 @@ type VoucherHandler struct {
 	Repo repository.DiscountRepository
 }
 
+// Apply applies a voucher/coupon discount on the cart total.
+// It runs after brand+category, so the % is applied on the already-reduced
+// per-item prices (summed to a cart total).
 func (h *VoucherHandler) Apply(ctx *HandlerContext) {
 	if ctx.VoucherCode == "" {
 		return
@@ -130,6 +140,9 @@ type BankOfferHandler struct {
 	Repo repository.DiscountRepository
 }
 
+// Apply applies an instant bank card discount on the cart total.
+// It is the last stage, so itemPrices[i] carries the fully-reduced price from
+// all previous stages; the bank % compounds on top of those reductions.
 func (h *BankOfferHandler) Apply(ctx *HandlerContext) {
 	if ctx.PaymentInfo == nil || ctx.PaymentInfo.BankName == nil {
 		return

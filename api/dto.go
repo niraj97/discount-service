@@ -47,12 +47,14 @@ type ErrorResponse struct {
 
 // ─── DTO definitions ──────────────────────────────────────────────────────────
 
+// CartItemDTO represents a single item in the cart.
 type CartItemDTO struct {
 	Product  ProductDTO `json:"product"`
 	Quantity int        `json:"quantity"`
 	Size     string     `json:"size"`
 }
 
+// ProductDTO represents a single product in the cart.
 type ProductDTO struct {
 	ID        string `json:"id"`
 	Brand     string `json:"brand"`
@@ -61,11 +63,13 @@ type ProductDTO struct {
 	BasePrice string `json:"base_price"` // string to avoid float precision issues
 }
 
+// CustomerDTO represents a single customer in the cart.
 type CustomerDTO struct {
 	ID   string `json:"id"`
 	Tier string `json:"tier"`
 }
 
+// PaymentInfoDTO represents payment information.
 type PaymentInfoDTO struct {
 	// Method is "CARD" | "UPI"
 	Method   string  `json:"method"`

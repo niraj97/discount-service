@@ -5,6 +5,7 @@ import (
 	"discount-service/models"
 )
 
+// DiscountService interface
 type DiscountService interface {
 	// CalculateCartDiscounts calculates final price after applying discount logic:
 	// - First apply brand/category discounts
