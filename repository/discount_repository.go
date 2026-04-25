@@ -27,8 +27,8 @@ type CategoryDiscount struct {
 type VoucherCode struct {
 	Code                 string
 	Percentage           decimal.Decimal
-	MinCartValue         decimal.Decimal // minimum cart total to apply
-	ExcludedBrands       []string        // brands the voucher cannot be used with
+	MinCartValue         decimal.Decimal     // minimum cart total to apply
+	ExcludedBrands       []string            // brands the voucher cannot be used with
 	ExcludedCategories   []string            // categories the voucher cannot be used with
 	RequiredCustomerTier models.CustomerTier // empty means available to all
 }

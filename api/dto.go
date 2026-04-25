@@ -13,17 +13,17 @@ import (
 
 // CartDiscountRequest is the JSON body for POST /api/v1/cart/discounts.
 type CartDiscountRequest struct {
-	CartItems   []CartItemDTO       `json:"cart_items"`
-	Customer    CustomerDTO         `json:"customer"`
-	PaymentInfo *PaymentInfoDTO     `json:"payment_info,omitempty"`
-	VoucherCode string              `json:"voucher_code,omitempty"`
+	CartItems   []CartItemDTO   `json:"cart_items"`
+	Customer    CustomerDTO     `json:"customer"`
+	PaymentInfo *PaymentInfoDTO `json:"payment_info,omitempty"`
+	VoucherCode string          `json:"voucher_code,omitempty"`
 }
 
 // ValidateCodeRequest is the JSON body for POST /api/v1/discount/validate.
 type ValidateCodeRequest struct {
-	Code      string         `json:"code"`
-	CartItems []CartItemDTO  `json:"cart_items"`
-	Customer  CustomerDTO    `json:"customer"`
+	Code      string        `json:"code"`
+	CartItems []CartItemDTO `json:"cart_items"`
+	Customer  CustomerDTO   `json:"customer"`
 }
 
 // CartDiscountResponse is the JSON response for the discount calculation endpoint.
@@ -54,11 +54,11 @@ type CartItemDTO struct {
 }
 
 type ProductDTO struct {
-	ID           string `json:"id"`
-	Brand        string `json:"brand"`
-	BrandTier    string `json:"brand_tier"` // "premium" | "regular" | "budget"
-	Category     string `json:"category"`
-	BasePrice    string `json:"base_price"` // string to avoid float precision issues
+	ID        string `json:"id"`
+	Brand     string `json:"brand"`
+	BrandTier string `json:"brand_tier"` // "premium" | "regular" | "budget"
+	Category  string `json:"category"`
+	BasePrice string `json:"base_price"` // string to avoid float precision issues
 }
 
 type CustomerDTO struct {
