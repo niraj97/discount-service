@@ -3,6 +3,11 @@
 package repository
 
 import (
+	"fmt"
+	"strings"
+
+	"discount-service/models"
+
 	decimal "github.com/shopspring/decimal"
 )
 
@@ -26,6 +31,27 @@ type VoucherCode struct {
 	ExcludedBrands       []string        // brands the voucher cannot be used with
 	ExcludedCategories   []string        // categories the voucher cannot be used with
 	RequiredCustomerTier string          // empty means available to all
+}
+
+// IsEligible checks if a voucher can be applied for the given customer and cart items.
+func (v *VoucherCode) IsEligible(customer models.CustomerProfile, items []models.CartItem) error {
+	if v.RequiredCustomerTier != "" && !strings.EqualFold(v.RequiredCustomerTier, customer.Tier) {
+		return fmt.Errorf("discount code %q requires customer tier %q, got %q", v.Code, v.RequiredCustomerTier, customer.Tier)
+	}
+
+	for _, item := range items {
+		for _, b := range v.ExcludedBrands {
+			if strings.EqualFold(item.Product.Brand, b) {
+				return fmt.Errorf("discount code %q cannot be applied to brand %q", v.Code, item.Product.Brand)
+			}
+		}
+		for _, c := range v.ExcludedCategories {
+			if strings.EqualFold(item.Product.Category, c) {
+				return fmt.Errorf("discount code %q cannot be applied to category %q", v.Code, item.Product.Category)
+			}
+		}
+	}
+	return nil
 }
 
 // BankOffer describes an instant discount for paying with a specific bank card.

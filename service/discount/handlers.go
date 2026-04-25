@@ -98,24 +98,8 @@ func (h *VoucherHandler) Apply(ctx *HandlerContext) {
 		return
 	}
 
-	// Tier check.
-	if voucher.RequiredCustomerTier != "" &&
-		!strings.EqualFold(voucher.RequiredCustomerTier, ctx.Customer.Tier) {
+	if err := voucher.IsEligible(ctx.Customer, ctx.Items); err != nil {
 		return
-	}
-
-	// Brand / category exclusion check.
-	for _, item := range ctx.Items {
-		for _, excluded := range voucher.ExcludedBrands {
-			if strings.EqualFold(item.Product.Brand, excluded) {
-				return
-			}
-		}
-		for _, excluded := range voucher.ExcludedCategories {
-			if strings.EqualFold(item.Product.Category, excluded) {
-				return
-			}
-		}
 	}
 
 	// Apply the voucher % uniformly across each item's running price so that

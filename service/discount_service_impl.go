@@ -115,33 +115,8 @@ func (s *discountServiceImpl) ValidateDiscountCode(
 		return false, fmt.Errorf("discount code %q not found", code)
 	}
 
-	// Tier restriction check.
-	if voucher.RequiredCustomerTier != "" &&
-		!strings.EqualFold(voucher.RequiredCustomerTier, customer.Tier) {
-		return false, fmt.Errorf(
-			"discount code %q requires customer tier %q, got %q",
-			code, voucher.RequiredCustomerTier, customer.Tier,
-		)
-	}
-
-	// Brand exclusion check.
-	for _, item := range cartItems {
-		for _, excluded := range voucher.ExcludedBrands {
-			if strings.EqualFold(item.Product.Brand, excluded) {
-				return false, fmt.Errorf(
-					"discount code %q cannot be applied to brand %q",
-					code, item.Product.Brand,
-				)
-			}
-		}
-		for _, excluded := range voucher.ExcludedCategories {
-			if strings.EqualFold(item.Product.Category, excluded) {
-				return false, fmt.Errorf(
-					"discount code %q cannot be applied to category %q",
-					code, item.Product.Category,
-				)
-			}
-		}
+	if err := voucher.IsEligible(customer, cartItems); err != nil {
+		return false, err
 	}
 
 	return true, nil
