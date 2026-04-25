@@ -19,17 +19,21 @@ type discountServiceImpl struct {
 	pipeline []discount.Handler
 }
 
-// NewDiscountService constructs a DiscountService with the standard four-stage
+// NewDiscountService constructs a DiscountService with the provided pipeline of handlers.
+// If no handlers are provided, it defaults to the standard four-stage
 // pipeline: brand → category → voucher → bank offer.
-func NewDiscountService(repo repository.DiscountRepository) DiscountService {
-	return &discountServiceImpl{
-		repo: repo,
-		pipeline: []discount.Handler{
+func NewDiscountService(repo repository.DiscountRepository, handlers ...discount.Handler) DiscountService {
+	if len(handlers) == 0 {
+		handlers = []discount.Handler{
 			&discount.BrandHandler{Repo: repo},
 			&discount.CategoryHandler{Repo: repo},
 			&discount.VoucherHandler{Repo: repo},
 			&discount.BankOfferHandler{Repo: repo},
-		},
+		}
+	}
+	return &discountServiceImpl{
+		repo:     repo,
+		pipeline: handlers,
 	}
 }
 
