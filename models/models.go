@@ -12,6 +12,14 @@ const (
 	BrandTierBudget  BrandTier = "budget"
 )
 
+type CustomerTier string
+
+const (
+	CustomerTierPremium CustomerTier = "premium"
+	CustomerTierRegular CustomerTier = "regular"
+	CustomerTierNone    CustomerTier = ""
+)
+
 type Product struct {
 	ID           string          `json:"id"`
 	Brand        string          `json:"brand"`
@@ -42,7 +50,7 @@ type DiscountedPrice struct {
 
 type CustomerProfile struct {
 	// Add relevant customer fields
-	ID   string `json:"id"`
-	Tier string `json:"tier"`
+	ID   string       `json:"id"`
+	Tier CustomerTier `json:"tier"`
 	// Add more fields as needed
 }

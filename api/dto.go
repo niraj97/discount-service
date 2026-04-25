@@ -102,7 +102,7 @@ func ToModelCartItems(dtos []CartItemDTO) ([]models.CartItem, string) {
 
 // ToModelCustomer converts a CustomerDTO to models.CustomerProfile.
 func ToModelCustomer(dto CustomerDTO) models.CustomerProfile {
-	return models.CustomerProfile{ID: dto.ID, Tier: dto.Tier}
+	return models.CustomerProfile{ID: dto.ID, Tier: models.CustomerTier(dto.Tier)}
 }
 
 // ToModelPaymentInfo converts a PaymentInfoDTO to *models.PaymentInfo.

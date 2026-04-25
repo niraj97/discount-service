@@ -98,7 +98,12 @@ func (h *VoucherHandler) Apply(ctx *HandlerContext) {
 		return
 	}
 
-	if err := voucher.IsEligible(ctx.Customer, ctx.Items); err != nil {
+	cartTotal := decimal.Zero
+	for _, price := range ctx.ItemPrices {
+		cartTotal = cartTotal.Add(price)
+	}
+
+	if err := voucher.IsEligible(ctx.Customer, ctx.Items, cartTotal); err != nil {
 		return
 	}
 

@@ -115,7 +115,12 @@ func (s *discountServiceImpl) ValidateDiscountCode(
 		return false, fmt.Errorf("discount code %q not found", code)
 	}
 
-	if err := voucher.IsEligible(customer, cartItems); err != nil {
+	cartTotal := decimal.Zero
+	for _, item := range cartItems {
+		cartTotal = cartTotal.Add(item.Product.BasePrice.Mul(decimal.NewFromInt(int64(item.Quantity))))
+	}
+
+	if err := voucher.IsEligible(customer, cartItems, cartTotal); err != nil {
 		return false, err
 	}
 

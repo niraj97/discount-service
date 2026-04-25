@@ -34,7 +34,7 @@ func Vouchers() []repository.VoucherCode {
 			MinCartValue:         decimal.NewFromInt(500),
 			ExcludedBrands:       []string{},
 			ExcludedCategories:   []string{},
-			RequiredCustomerTier: "",
+			RequiredCustomerTier: models.CustomerTierNone,
 		},
 		{
 			Code:                 "PREMIUM20",
@@ -42,7 +42,7 @@ func Vouchers() []repository.VoucherCode {
 			MinCartValue:         decimal.NewFromInt(1000),
 			ExcludedBrands:       []string{},
 			ExcludedCategories:   []string{},
-			RequiredCustomerTier: "premium", // only for premium customers
+			RequiredCustomerTier: models.CustomerTierPremium, // only for premium customers
 		},
 		{
 			Code:                 "NOTSHOES",
@@ -50,7 +50,7 @@ func Vouchers() []repository.VoucherCode {
 			MinCartValue:         decimal.Zero,
 			ExcludedBrands:       []string{},
 			ExcludedCategories:   []string{"Shoes"},
-			RequiredCustomerTier: "",
+			RequiredCustomerTier: models.CustomerTierNone,
 		},
 		{
 			Code:                 "SUPER69",
@@ -58,7 +58,7 @@ func Vouchers() []repository.VoucherCode {
 			MinCartValue:         decimal.Zero,
 			ExcludedBrands:       []string{},
 			ExcludedCategories:   []string{},
-			RequiredCustomerTier: "",
+			RequiredCustomerTier: models.CustomerTierNone,
 		},
 	}
 }
@@ -126,12 +126,12 @@ func MultiItemCart() []models.CartItem {
 
 // DefaultCustomer returns a generic regular-tier customer.
 func DefaultCustomer() models.CustomerProfile {
-	return models.CustomerProfile{ID: "cust-001", Tier: "regular"}
+	return models.CustomerProfile{ID: "cust-001", Tier: models.CustomerTierRegular}
 }
 
 // PremiumCustomer returns a premium-tier customer.
 func PremiumCustomer() models.CustomerProfile {
-	return models.CustomerProfile{ID: "cust-002", Tier: "premium"}
+	return models.CustomerProfile{ID: "cust-002", Tier: models.CustomerTierPremium}
 }
 
 // ICICIPayment returns a PaymentInfo for an ICICI credit card.

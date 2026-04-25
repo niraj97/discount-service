@@ -29,13 +29,17 @@ type VoucherCode struct {
 	Percentage           decimal.Decimal
 	MinCartValue         decimal.Decimal // minimum cart total to apply
 	ExcludedBrands       []string        // brands the voucher cannot be used with
-	ExcludedCategories   []string        // categories the voucher cannot be used with
-	RequiredCustomerTier string          // empty means available to all
+	ExcludedCategories   []string            // categories the voucher cannot be used with
+	RequiredCustomerTier models.CustomerTier // empty means available to all
 }
 
 // IsEligible checks if a voucher can be applied for the given customer and cart items.
-func (v *VoucherCode) IsEligible(customer models.CustomerProfile, items []models.CartItem) error {
-	if v.RequiredCustomerTier != "" && !strings.EqualFold(v.RequiredCustomerTier, customer.Tier) {
+func (v *VoucherCode) IsEligible(customer models.CustomerProfile, items []models.CartItem, cartTotal decimal.Decimal) error {
+	if v.MinCartValue.IsPositive() && cartTotal.LessThan(v.MinCartValue) {
+		return fmt.Errorf("discount code %q requires a minimum cart value of %s", v.Code, v.MinCartValue.StringFixed(2))
+	}
+
+	if v.RequiredCustomerTier != "" && !strings.EqualFold(string(v.RequiredCustomerTier), string(customer.Tier)) {
 		return fmt.Errorf("discount code %q requires customer tier %q, got %q", v.Code, v.RequiredCustomerTier, customer.Tier)
 	}
 
